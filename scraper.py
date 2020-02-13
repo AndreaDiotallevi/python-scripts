@@ -2,38 +2,33 @@ import os
 import bs4
 import requests
 import pandas as pd
+import csv, json
 
 PATH = os.path.join("/Users/andreadiotallevi/Code/AndreaDiotallevi/web-scraping")
 
-def table_to_df(table):
-	return pd.DataFrame([[li.text for li in ul.findAll('li')] for li in ul.findAll('li')])
-
-# def next_page(soup):
-# 	return "http:" + soup.find('a', attrs={'rel':'next'}).get('href')
-
-res = pd.DataFrame()
 url = "http://istanbulfilms.blogspot.com/2010/05/top-films-from-guinea-1.html"
-counter = 0
 
-# while True:
-# 	print(counter)
-# 	page = requests.get(url)
-# 	soup = bs4.BeautifulSoup(page.content, 'lxml')
-# 	table = soup.find(name='table', attrs={'class':'widget-content'})
-# 	res = res.append(table_to_df(table))
-# 	res.to_csv(os.path.join(PATH,"BIC","table.csv"), index=None, sep=';', encoding='iso-8859-1')
-# 	url = next_page(soup)
-# 	counter += 1
-
-print(counter)
 page = requests.get(url)
 soup = bs4.BeautifulSoup(page.content, 'lxml')
-table = soup.find(name='table', attrs={'class':'widget-content'})
-res = res.append(table_to_df(table))
-res.to_csv(os.path.join(PATH,"BIC","table.csv"), index=None, sep=';', encoding='iso-8859-1')
-# url = next_page(soup)
-# counter += 1
+div = soup.find(name='div', attrs={'id':'sidebar-right-1'})
 
-for ul in soup.findAll('ul', class_='widget-content'):
-    for link in ul.findAll('a'):
-        print(link.text)
+
+data = []
+for li in soup.findAll('li'):
+  page = requests.get(li.find('a').get('href'))
+  soup = bs4.BeautifulSoup(page.content, 'lxml')
+  div = soup.find(name='div', attrs={'id':'main'})
+  for i, b in enumerate(soup.findAll('b')):
+    if i == 0:
+      country = b.text.split("FROM ")[-1]
+      print(country)
+      movies = []
+    elif (not b.find('a')) and (b.text.strip()):
+      movies.append(b.text)
+      # title = b.text.encode('utf-8')
+      # imdburl = soup.select_one("a[href*=imdb]")['href']
+  data.append({country:movies})
+with open("movies.json", "w") as outfile:
+  json.dump(data, outfile, indent=2)
+
+# https://api.themoviedb.org/3/search/movie?api_key=e3e4a0a5762593956dd3cdfb9cc2ed4f&language=en-US&page=1&include_adult=false&query=the-kite-runner
